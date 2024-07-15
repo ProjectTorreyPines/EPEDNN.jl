@@ -6,9 +6,9 @@ import Dates
 import Memoize
 import BSON
 
-#= ==================================== =#
-# structs/constructors for the EPEDmodel
-#= ==================================== =#
+#= ===================================== =#
+#  structs/constructors for the EPEDmodel
+#= ===================================== =#
 # EPEDmodel abstract type, since we could have different models
 abstract type EPEDmodel end
 
@@ -52,9 +52,9 @@ function EPED1NNmodel(fluxmodel::Flux.Chain, name, xnames, ynames, xm, xσ, ym, 
     return EPED1NNmodel(fluxmodel, name, date, xnames, ynames, xm, xσ, ym, yσ, xbounds, ybounds, yp)
 end
 
-#= ======================================== =#
-# functions for saving/loading the EPEDmodel
-#= ======================================== =#
+#= ========================================== =#
+#  functions for saving/loading the EPEDmodel
+#= ========================================== =#
 function savemodel(model::EPEDmodel, filename::String)
     savedict = Dict()
     for name in fieldnames(EPED1NNmodel)
@@ -78,9 +78,9 @@ function loadmodel(filename::String)
     return EPED1NNmodel(args...)
 end
 
-#= ================================================== =#
-# functions to get the pedestal solution
-#= ================================================== =#
+#= ====================================== =#
+#  functions to get the pedestal solution
+#= ====================================== =#
 function pedestal_array(pedmodel::EPED1NNmodel, x::AbstractMatrix{<:Real}; only_powerlaw::Bool=false, warn_nn_train_bounds::Bool=true)
     return hcat(collect(map(x0 -> pedestal_array(pedmodel, x0; only_powerlaw, warn_nn_train_bounds), eachslice(x; dims=2)))...)
 end
@@ -138,9 +138,9 @@ function pedestal_array(
     return pedestal_array(pedmodel, x; only_powerlaw, warn_nn_train_bounds)
 end
 
-#= ================================================= =#
-# structs/constructors to interpret PedestalSolution
-#= ================================================= =#
+#= ================================================== =#
+#  structs/constructors to interpret PedestalSolution
+#= ================================================== =#
 struct ModeSolution
     H
     meta
@@ -208,9 +208,9 @@ function PedestalSolution(pedmodel::EPED1NNmodel, x::AbstractVector; only_powerl
     )
 end
 
-#= ================================================== =#
-# functors for EPED1NNmodel objects
-#= ================================================== =#
+#= ================================= =#
+#  functors for EPED1NNmodel objects
+#= ================================= =#
 function (pedmodel::EPED1NNmodel)(x::Array; only_powerlaw::Bool=false, warn_nn_train_bounds::Bool=true)
     return pedestal_array(pedmodel, x; only_powerlaw, warn_nn_train_bounds)
 end
@@ -235,7 +235,7 @@ mutable struct InputEPED{T<:Real}
         return InputEPED{Float64}()
     end
     function InputEPED{T}() where {T<:Real}
-        return new(0.0, 0.0, 0.0 , 0.0 ,0.0, 0.0, 0.0, 0.0 , 0.0 ,0.0)
+        return new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
     end
 end
 
@@ -257,9 +257,25 @@ function (pedmodel::EPED1NNmodel)(input::InputEPED; only_powerlaw::Bool=false, w
     )
 end
 
-#= ================================================== =#
-# functors for EPED1NNmodel objects
-#= ================================================== =#
+"""
+    run_epednn(input_eped::InputEPED; model_filename::String="EPED1NNmodel.bson", warn_nn_train_bounds::Bool)
+
+Run EPEDNN starting from a InputEPED, using a specific `model_filename`.
+
+The warn_nn_train_bounds checks against the standard deviation of the inputs to warn if evaluation is likely outside of training bounds.
+
+Returns a `PedestalSolution` structure
+"""
+function run_epednn(input_eped::InputEPED; model_filename::String="EPED1NNmodel.bson", warn_nn_train_bounds::Bool)
+    epedmod = EPEDNN.loadmodelonce(model_filename)
+    return epedmod(input_eped...; warn_nn_train_bounds)
+end
+
+export run_epednn
+
+#= ============= =#
+#  power law fit
+#= ============= =#
 function power_law_fit(A, b, λ=0)
     A = vcat(transpose(b .* 0.0 .+ 1), log10.(abs.(A)))
     b = log10.(abs.(b))
@@ -315,5 +331,7 @@ function effective_triangularity(tri_lo::T, tri_up::T) where {T<:Real}
     return (2.0 / 3.0) * tri_min + (1.0 / 3.0) * tri_max
 end
 
+const document = Dict()
+document[Symbol(@__MODULE__)] = [name for name in Base.names(@__MODULE__; all=false, imported=false) if name != Symbol(@__MODULE__)]
 
 end # module
