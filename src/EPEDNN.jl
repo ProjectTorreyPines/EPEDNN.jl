@@ -60,7 +60,7 @@ function savemodel(model::EPEDmodel, filename::String)
     for name in fieldnames(EPED1NNmodel)
         savedict[name] = getproperty(model, name)
     end
-    fullpath = dirname(dirname(@__FILE__)) * "/train/" * filename
+    fullpath = dirname(dirname(@__FILE__)) * "/data/" * filename
     BSON.bson(fullpath, savedict)
     return fullpath
 end
@@ -70,7 +70,7 @@ Memoize.@memoize function loadmodelonce(filename::String)
 end
 
 function loadmodel(filename::String)
-    savedict = BSON.load(dirname(dirname(@__FILE__)) * "/train/" * filename, @__MODULE__)
+    savedict = BSON.load(dirname(dirname(@__FILE__)) * "/data/" * filename, @__MODULE__)
     args = []
     for name in fieldnames(EPED1NNmodel)
         push!(args, savedict[name])
