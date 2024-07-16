@@ -1,7 +1,7 @@
 name = "EPEDNN"
 uuid = "e64856f0-3bb8-4376-b4b7-c03396503991"
 authors = ["Orso Meneghini <orso82@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 BSON = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"
