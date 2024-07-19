@@ -10,6 +10,6 @@ Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 Memoize = "c03570c3-d221-55d1-a50c-7939bbd78826"
 
 [compat]
-Memoize = ">= 0.4"
-BSON = ">= 0.3"
-Flux = ">= 0.14"
+BSON = "0.3"
+Flux = "0.14"
+Memoize = "0.4"
