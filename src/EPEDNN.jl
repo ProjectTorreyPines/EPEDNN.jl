@@ -239,6 +239,21 @@ mutable struct InputEPED{T<:Real}
     end
 end
 
+function Base.show(io::IO, input::InputEPED)
+    return print(io,
+        "\n" *
+        "           a : $(input.a)\n" *
+        "       betan : $(input.betan)\n" *
+        "          bt : $(input.bt)\n" *
+        "       delta : $(input.delta)\n" *
+        "          ip : $(input.ip)\n" *
+        "       kappa : $(input.kappa)\n" *
+        "           m : $(input.m)\n" *
+        "       neped : $(input.neped)\n" *
+        "           r : $(input.r)\n" *
+        "     zeffped : $(input.zeffped)")
+end
+
 function (pedmodel::EPED1NNmodel)(input::InputEPED; only_powerlaw::Bool=false, warn_nn_train_bounds::Bool=true)
     return PedestalSolution(
         pedmodel,
@@ -323,7 +338,7 @@ end
 
 Effective triangularity to be used as an EPED input. Defined as:
 tri_eff = (2/3)*tri_min + (1/3)*tri_max
-where tri_min is the minimum of upper and lower triangularity, and tri_max is the max
+where tri_min is the minimum of upper and lower triangularity, and tri_max is the maximum
 """
 function effective_triangularity(tri_lo::T, tri_up::T) where {T<:Real}
     tri_min = min(tri_lo, tri_up)
