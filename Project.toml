@@ -11,5 +11,5 @@ Memoize = "c03570c3-d221-55d1-a50c-7939bbd78826"
 
 [compat]
 BSON = "0.3"
-Flux = "0.14"
+Flux = "0.14, 0.15"
 Memoize = "0.4"
