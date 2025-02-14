@@ -19,29 +19,29 @@ struct EPED1NNmodel <: EPEDmodel
     date::Dates.DateTime
     xnames::Vector{String}
     ynames::Vector{String}
-    xm::Vector{Float32}
-    xσ::Vector{Float32}
-    ym::Vector{Float32}
-    yσ::Vector{Float32}
-    xbounds::Array{Float32}
-    ybounds::Array{Float32}
+    xm::Vector{Float64}
+    xσ::Vector{Float64}
+    ym::Vector{Float64}
+    yσ::Vector{Float64}
+    xbounds::Array{Float64}
+    ybounds::Array{Float64}
     yp::Array{Float64}
 end
 
 # constructor that always converts to the correct types
 function EPED1NNmodel(fluxmodel::Flux.Chain, name, date, xnames, ynames, xm, xσ, ym, yσ, xbounds, ybounds, yp)
     return EPED1NNmodel(
-        fluxmodel,
+        Flux.fmap(Flux.f64, fluxmodel),
         String(name),
         date,
         String.(xnames),
         String.(ynames),
-        Float32.(reshape(xm, length(xm))),
-        Float32.(reshape(xσ, length(xσ))),
-        Float32.(reshape(ym, length(ym))),
-        Float32.(reshape(yσ, length(yσ))),
-        Float32.(xbounds),
-        Float32.(ybounds),
+        Float64.(reshape(xm, length(xm))),
+        Float64.(reshape(xσ, length(xσ))),
+        Float64.(reshape(ym, length(ym))),
+        Float64.(reshape(yσ, length(yσ))),
+        Float64.(xbounds),
+        Float64.(ybounds),
         yp
     )
 end
@@ -86,28 +86,23 @@ function pedestal_array(pedmodel::EPED1NNmodel, x::AbstractMatrix{<:Real}; only_
 end
 
 function pedestal_array(pedmodel::EPED1NNmodel, x::AbstractVector{<:Real}; only_powerlaw::Bool=false, warn_nn_train_bounds::Bool=true)
-    if eltype(x) <: Float32
-        x32 = copy(x)
-    else
-        x32 = Float32.(x)
-    end
-
+    xx = deepcopy(x)
+    
     if warn_nn_train_bounds # training bounds are on the original data
-        for ix in eachindex(x32)
-            if any(x32[ix] .< pedmodel.xbounds[ix, 1])
-                @warn("Extrapolation warning on $(pedmodel.xnames[ix])=$(minimum(x32[ix])) is below bound of $(pedmodel.xbounds[ix,1])")
-            elseif any(x32[ix] .> pedmodel.xbounds[ix, 2])
-                @warn("Extrapolation warning on $(pedmodel.xnames[ix])=$(maximum(x32[ix])) is above bound of $(pedmodel.xbounds[ix,2])")
+        for ix in eachindex(xx)
+            if any(xx[ix] .< pedmodel.xbounds[ix, 1])
+                @warn("Extrapolation warning on $(pedmodel.xnames[ix])=$(minimum(xx[ix])) is below bound of $(pedmodel.xbounds[ix,1])")
+            elseif any(xx[ix] .> pedmodel.xbounds[ix, 2])
+                @warn("Extrapolation warning on $(pedmodel.xnames[ix])=$(maximum(xx[ix])) is above bound of $(pedmodel.xbounds[ix,2])")
             end
         end
     end
 
-    x32[4] += 1.0 # delta + 1
-    x32 .= abs.(x32) # to make Bt and Ip always positive
-    y0 = power_law_fit_eval(pedmodel.yp, x32)
+    xx[4] += 1.0 # delta + 1
+    xx .= abs.(xx) # to make Bt and Ip always positive
+    y0 = power_law_fit_eval(pedmodel.yp, xx)
     if !only_powerlaw
-        xn = (x32 .- pedmodel.xm) ./ pedmodel.xσ
-        xn = Float32.(xn)
+        xn = (xx .- pedmodel.xm) ./ pedmodel.xσ
         yn = pedmodel.fluxmodel(xn)
         y1 = yn .* pedmodel.yσ .+ pedmodel.ym
         y = y0 .+ y1
@@ -115,7 +110,7 @@ function pedestal_array(pedmodel::EPED1NNmodel, x::AbstractVector{<:Real}; only_
         y = y0
     end
     y .^= 2 # quare of the outputs
-    y[1:9] .*= [x32[8] for k in 1:9] # multiply by density
+    y[1:9] .*= [xx[8] for k in 1:9] # multiply by density
     return y
 end
 
@@ -195,11 +190,13 @@ end
 function PedestalSolution(pedmodel::EPED1NNmodel, x::AbstractVector; only_powerlaw::Bool=false, warn_nn_train_bounds::Bool=true)
     y = pedestal_array(pedmodel, x; only_powerlaw, warn_nn_train_bounds)
     return PedestalSolution(
+        # pressure
         DiamagneticSolution(
             ModeSolution(y[1], y[2], y[3]),
             ModeSolution(y[4], y[5], y[6]),
             ModeSolution(y[7], y[8], y[9])
         ),
+        # width
         DiamagneticSolution(
             ModeSolution(y[10], y[11], y[12]),
             ModeSolution(y[13], y[14], y[15]),
