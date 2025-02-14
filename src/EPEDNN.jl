@@ -49,7 +49,12 @@ function loadmodel(filename::String)
     savedict = BSON.load(dirname(dirname(@__FILE__)) * "/data/" * filename, @__MODULE__)
     args = []
     for name in fieldnames(EPED1NNmodel)
-        push!(args, savedict[name])
+        if name == :fluxmodel
+            savedict[name] = Flux.fmap(Flux.f64, savedict[name])
+            push!(args, savedict[name])
+        else
+            push!(args, savedict[name])
+        end
     end
     return EPED1NNmodel(args...)
 end
