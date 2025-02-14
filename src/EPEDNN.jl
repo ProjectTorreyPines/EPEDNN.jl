@@ -28,30 +28,6 @@ struct EPED1NNmodel <: EPEDmodel
     yp::Array{Float64}
 end
 
-# constructor that always converts to the correct types
-function EPED1NNmodel(fluxmodel::Flux.Chain, name, date, xnames, ynames, xm, xσ, ym, yσ, xbounds, ybounds, yp)
-    return EPED1NNmodel(
-        Flux.fmap(Flux.f64, fluxmodel),
-        String(name),
-        date,
-        String.(xnames),
-        String.(ynames),
-        Float64.(reshape(xm, length(xm))),
-        Float64.(reshape(xσ, length(xσ))),
-        Float64.(reshape(ym, length(ym))),
-        Float64.(reshape(yσ, length(yσ))),
-        Float64.(xbounds),
-        Float64.(ybounds),
-        yp
-    )
-end
-
-# constructor where the date is always filled out
-function EPED1NNmodel(fluxmodel::Flux.Chain, name, xnames, ynames, xm, xσ, ym, yσ, xbounds, ybounds, yp)
-    date = Dates.now()
-    return EPED1NNmodel(fluxmodel, name, date, xnames, ynames, xm, xσ, ym, yσ, xbounds, ybounds, yp)
-end
-
 #= ========================================== =#
 #  functions for saving/loading the EPEDmodel
 #= ========================================== =#
