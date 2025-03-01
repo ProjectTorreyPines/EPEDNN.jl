@@ -1,7 +1,6 @@
 module EPEDNN
 
 import Flux
-import Flux: NNlib
 import Dates
 import Memoize
 import BSON
@@ -34,7 +33,11 @@ end
 function savemodel(model::EPEDmodel, filename::String)
     savedict = Dict()
     for name in fieldnames(EPED1NNmodel)
-        savedict[name] = getproperty(model, name)
+        if name == :fluxmodel
+            savedict[:fluxstate] = Flux.state(model.fluxmodel)
+        else
+            savedict[name] = getproperty(model, name)
+        end
     end
     fullpath = dirname(dirname(@__FILE__)) * "/data/" * filename
     BSON.bson(fullpath, savedict)
@@ -50,8 +53,14 @@ function loadmodel(filename::String)
     args = []
     for name in fieldnames(EPED1NNmodel)
         if name == :fluxmodel
-            savedict[name] = Flux.fmap(Flux.f64, savedict[name])
-            push!(args, savedict[name])
+            fluxmodel = Flux.Chain(
+                Flux.Dense(10 => 32, Flux.gelu),
+                Flux.Dense(32 => 32, Flux.gelu),
+                Flux.Dense(32 => 32, Flux.gelu),
+                Flux.Dense(32 => 18)
+            )
+            Flux.loadmodel!(fluxmodel, savedict[:fluxstate])
+            push!(args, fluxmodel)
         else
             push!(args, savedict[name])
         end
@@ -68,7 +77,7 @@ end
 
 function pedestal_array(pedmodel::EPED1NNmodel, x::AbstractVector{<:Real}; only_powerlaw::Bool=false, warn_nn_train_bounds::Bool=true)
     xx = deepcopy(x)
-    
+
     if warn_nn_train_bounds # training bounds are on the original data
         for ix in eachindex(xx)
             if any(xx[ix] .< pedmodel.xbounds[ix, 1])
