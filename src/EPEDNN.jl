@@ -58,7 +58,7 @@ function loadmodel(filename::String)
                 Flux.Dense(32 => 32, Flux.gelu),
                 Flux.Dense(32 => 32, Flux.gelu),
                 Flux.Dense(32 => 18)
-            )
+            ) |> Flux.f64 # use a 64bit model
             Flux.loadmodel!(fluxmodel, savedict[:fluxstate])
             push!(args, fluxmodel)
         else
