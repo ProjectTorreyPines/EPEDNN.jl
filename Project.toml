@@ -1,6 +1,6 @@
 name = "EPEDNN"
 uuid = "e64856f0-3bb8-4376-b4b7-c03396503991"
-authors = ["Orso Meneghini <orso82@gmail.com>"]
+authors = ["Orso Meneghini <orso82@gmail.com>", "Tim Slendebroek <tim@slendebroek.com>"]
 version = "1.0.7"
 
 [deps]
@@ -8,8 +8,16 @@ BSON = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 Memoize = "c03570c3-d221-55d1-a50c-7939bbd78826"
+SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 
 [compat]
 BSON = "0.3"
 Flux = "0.14, 0.15, 0.16"
 Memoize = "0.4"
+SpecialFunctions = "2"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
