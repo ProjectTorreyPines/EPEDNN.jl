@@ -560,7 +560,7 @@ end
 
 function pedestal_height(pedmodel::EPED1NNensemble, input_eped::InputEPED, sol::NamedTuple)
     if !sol.in_distribution
-        @warn "EPED-NN ensemble out of distribution: σ=$(round(sol.sigma_frac*100; digits=1))% of the height, extrapolation=$(round(sol.extrapolation; digits=2))" maxlog = 1
+        @warn "EPED-NN ensemble out of distribution: σ=$(round(plain_value(sol.sigma_frac)*100; digits=1))% of the height, extrapolation=$(round(plain_value(sol.extrapolation); digits=2))" maxlog = 1
     end
     return sol.height, sol.sigma_frac_combined
 end
@@ -637,6 +637,16 @@ function input_vector(pedmodel::EPEDmodel, input::InputEPED)
     return [getproperty(input, Symbol(name)) for name in pedmodel.xnames]
 end
 
+"""
+    plain_value(x::Real)
+
+Floating point value of `x`. Number types that wrap a value together with derivative information
+(dual numbers, which store it in a `value` field) are unwrapped; EPEDNN evaluates such numbers
+generically and only needs the plain value for diagnostics and messages.
+"""
+plain_value(x::AbstractFloat) = x
+plain_value(x::Real) = hasfield(typeof(x), :value) ? plain_value(getfield(x, :value)) : float(x)
+
 # An input that sits exactly on a training bound can land a floating point epsilon outside of it
 # (a 15 MA ITER against training data that tops out at ip = 15.0, say). That is not extrapolation:
 # distances below this fraction of the training range are taken to be zero.
@@ -658,6 +668,7 @@ A value of 0.5 means the input is half a training-range-width outside the bounds
 not register as extrapolation.
 """
 function extrapolation_distance(pedmodel::EPEDmodel, x::AbstractVector{<:Real})
+    x = plain_value.(x) # the distance from the training set is a diagnostic: it does not carry derivatives
     per_input = Dict{String,Float64}()
     max_dist = 0.0
     worst = ""
