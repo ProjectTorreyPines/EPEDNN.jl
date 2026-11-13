@@ -181,3 +181,20 @@ end
     end
 
 end
+
+# a number that carries its value together with other information, as dual numbers do
+struct Wrapped <: Real
+    value::Float64
+    extra::Float64
+end
+
+@testset "diagnostics on numbers that wrap a value" begin
+    @test EPEDNN.plain_value(1.5) === 1.5
+    @test EPEDNN.plain_value(2) === 2.0
+    @test EPEDNN.plain_value(Wrapped(1.5, 7.0)) === 1.5
+
+    # the distance from the training set is a diagnostic: it is the same for wrapped and plain inputs
+    epedmod = EPEDNN.loadmodelonce("EPED1NNmodel.bson")
+    x = [getproperty(DIIID_LIKE, Symbol(name)) for name in epedmod.xnames]
+    @test EPEDNN.extrapolation_distance(epedmod, Wrapped.(x, 1.0)) == EPEDNN.extrapolation_distance(epedmod, x)
+end
